@@ -46,8 +46,10 @@ Interop::JSBlock::JSBlockDescriptor Interop::JSBlock::kJSBlockDescriptor = {
                     v8::Locker locker(isolate);
                     Isolate::Scope isolate_scope(isolate);
                     HandleScope handle_scope(isolate);
+                    BlockWrapper* blockWrapper = static_cast<BlockWrapper*>(tns::GetValue(isolate, callback));
                     tns::DeleteValue(isolate, callback);
                     wrapper->callback_->Reset();
+                    delete blockWrapper;
                 }
             }
             delete wrapper;
