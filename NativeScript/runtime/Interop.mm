@@ -53,6 +53,7 @@ Interop::JSBlock::JSBlockDescriptor Interop::JSBlock::kJSBlockDescriptor = {
                 }
             }
             delete wrapper;
+            ffi_closure_free(block->ffiClosure);
             block->~JSBlock();
         }
     }
@@ -70,14 +71,19 @@ IMP Interop::CreateMethod(const uint8_t initialParamIndex, const uint8_t argsCou
 
 CFTypeRef Interop::CreateBlock(const uint8_t initialParamIndex, const uint8_t argsCount, const TypeEncoding* typeEncoding, FFIMethodCallback callback, void* userData) {
     JSBlock* blockPointer = reinterpret_cast<JSBlock*>(malloc(sizeof(JSBlock)));
-    void* functionPointer = (void*)CreateMethod(initialParamIndex, argsCount, typeEncoding, callback, userData);
-
+    void* functionPointer;
+    ffi_closure* closure = static_cast<ffi_closure*>(ffi_closure_alloc(sizeof(ffi_closure), &functionPointer));
+    ParametrizedCall* call = ParametrizedCall::Get(typeEncoding, initialParamIndex, initialParamIndex + argsCount);
+    ffi_status status = ffi_prep_closure_loc(closure, call->Cif, callback, userData, functionPointer);
+    tns::Assert(status == FFI_OK);
+    
     *blockPointer = {
         .isa = nullptr,
         .flags = JSBlock::BLOCK_HAS_COPY_DISPOSE | JSBlock::BLOCK_NEEDS_FREE | (1 /* ref count */ << 1),
         .reserved = 0,
         .invoke = functionPointer,
         .descriptor = &JSBlock::kJSBlockDescriptor,
+        .ffiClosure = closure,
     };
 
     blockPointer->userData = userData;

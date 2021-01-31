@@ -186,7 +186,7 @@ private:
         const void* invoke;
         JSBlockDescriptor* descriptor;
         void* userData;
-
+        ffi_closure* ffiClosure;
         static JSBlockDescriptor kJSBlockDescriptor;
     } JSBlock;
 };
